@@ -4,11 +4,13 @@ class Gititback::Client
   end
   
   def local_entities
-    @config.backup_dirs.collect do |path|
+    @config.source_dirs.collect do |path|
       Dir.glob(path)
-    end.flatten.collect do |path|
+    end.flatten.reject do |path|
+      @config.ignore_sources.include?(File.basename(path))
+    end.collect do |path|
       Gititback::Entity.new(@config, path)
-    end
+    end.compact
   end
   
   def server_id

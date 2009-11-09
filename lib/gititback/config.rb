@@ -20,12 +20,15 @@ class Gititback::Config < OpenStruct
   end.flatten.freeze
   
   DEFAULT_OPTIONS = {
-    :backup_dirs => %w[
+    :source_dirs => %w[
       /web/*
       /home/*
       /etc
     ],
     :backup_location => '/var/spool/gititback',
+    :ignore_sources => %w[
+      lost+found
+    ],
     :server_id =>
       begin
         `uname -n`.chomp
