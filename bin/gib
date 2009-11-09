@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+#
+# gititback
+#
+
+$LOAD_PATH << File.expand_path(File.join('..', 'lib'), File.dirname(__FILE__))
+
+require 'optparse'
+require 'gititback'
+
+options = { }
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: gib [options]"
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+end.parse!
+
