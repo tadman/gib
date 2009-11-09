@@ -1,18 +1,17 @@
 class Gititback::Client
-  def initialize(options = nil)
-    @options = (options or { })
-    
-    @options[:config] = Gititback::Config.new(@options[:config])
+  def initialize(config)
+    @config = config
   end
   
-  def perform(*args)
-    command = args.pop
-    
-    case (command)
-    when 'status'
-      puts "Status: OK"
-    else
-      raise Gititback::Exception::InvalidCommand, "Invalid command #{command}"
+  def local_entities
+    @config.backup_dirs.collect do |path|
+      Dir.glob(path)
+    end.flatten.collect do |path|
+      Gititback::Entity.new(@config, path)
     end
+  end
+  
+  def server_id
+    @server_id ||= `uname -n`
   end
 end

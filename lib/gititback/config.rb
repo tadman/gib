@@ -25,8 +25,14 @@ class Gititback::Config < OpenStruct
       /home/*
       /etc
     ],
-    :backup_location => '/var/spool/gititback'
-  }
+    :backup_location => '/var/spool/gititback',
+    :server_id =>
+      begin
+        `uname -n`.chomp
+      rescue
+        'localhost'
+      end
+  }.freeze
 
   def self.config_files_found
     @config_files_found ||=
@@ -44,7 +50,11 @@ class Gititback::Config < OpenStruct
   end
 
   def initialize(config = nil)
-    marshal_load(__import_config(config || self.class.config_file_path))
+    marshal_load(
+      DEFAULT_OPTIONS.merge(
+        __import_config(config || self.class.config_file_path)
+      )
+    )
   end
   
 protected
@@ -66,9 +76,9 @@ protected
         raise Gititback::Exception::ConfigurationError, "Configuration file #{config} has an invalid structure, should be key/value"
       end
     when Hash
-      DEFAULT_OPTIONS.merge(Gititback::Support.symbolize_hash_keys(config))
+      Gititback::Support.symbolize_hash_keys(config)
     when nil
-      DEFAULT_OPTIONS.dup
+      { }
     else
       raise Gititback::Exception::ConfigurationError, "Invalid configuration type #{config.class} passed."
     end

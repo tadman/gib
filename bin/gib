@@ -10,31 +10,12 @@ COMMAND_NAME = File.basename(__FILE__).freeze
 require 'optparse'
 require 'gititback'
 
-options = { }
-
-args =
-  OptionParser.new do |opts|
-    opts.banner = "Usage: gib [options] <command>"
-
-    opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-      options[:verbose] = v
-    end
-
-    opts.on("-c", "--config=s", "Specify alternate configuration file") do |v|
-      options[:config] = v
-    end
-
-    opts.on("-V", "--version", "Show version information") do
-      puts "#{COMMAND_NAME}: Version #{Gititback::VERSION}"
-      exit
-    end
-  end.parse!
-
-client = Gititback::Client.new(options)
-
 begin
-  client.perform(*args)
+  Gititback::CommandLine.interpret!
 rescue Gititback::Exception::InvalidCommand => e
   STDERR.puts "#{COMMAND_NAME}: #{e}"
   STDERR.puts "  * Run '#{COMMAND_NAME} --help' to show valid commands."
+rescue OptionParser::InvalidOption => e
+  STDERR.puts "#{COMMAND_NAME}: #{e}"
+  exit
 end
