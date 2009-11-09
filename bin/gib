@@ -5,16 +5,36 @@
 
 $LOAD_PATH << File.expand_path(File.join('..', 'lib'), File.dirname(__FILE__))
 
+COMMAND_NAME = File.basename(__FILE__).freeze
+
 require 'optparse'
 require 'gititback'
 
 options = { }
 
-OptionParser.new do |opts|
-  opts.banner = "Usage: gib [options]"
+args =
+  OptionParser.new do |opts|
+    opts.banner = "Usage: gib [options] <command>"
 
-  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-    options[:verbose] = v
-  end
-end.parse!
+    opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+      options[:verbose] = v
+    end
 
+    opts.on("-c", "--config=s", "Specify alternate configuration file") do |v|
+      options[:config] = v
+    end
+
+    opts.on("-V", "--version", "Show version information") do
+      puts "#{COMMAND_NAME}: Version #{Gititback::VERSION}"
+      exit
+    end
+  end.parse!
+
+client = Gititback::Client.new(options)
+
+begin
+  client.perform(*args)
+rescue Gititback::Exception::InvalidCommand => e
+  STDERR.puts "#{COMMAND_NAME}: #{e}"
+  STDERR.puts "  * Run '#{COMMAND_NAME} --help' to show valid commands."
+end
