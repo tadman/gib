@@ -35,7 +35,7 @@ class Gititback::CommandLine
     
     case (command)
     when 'status'
-      puts "Status:"
+      puts "#{@config.server_id} Status:"
       puts '-' * 78
       @client.local_entities.each do |e|
         puts "%-40s %-37s" % [ e.path, e.status ]
