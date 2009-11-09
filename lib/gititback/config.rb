@@ -1,5 +1,6 @@
 require 'yaml'
 require 'ostruct'
+require 'socket'
 
 class Gititback::Config < OpenStruct
   CONFIG_FILE_FORMATS = %w[
@@ -29,12 +30,7 @@ class Gititback::Config < OpenStruct
     :ignore_sources => %w[
       lost+found
     ],
-    :server_id =>
-      begin
-        `uname -n`.chomp
-      rescue
-        'localhost'
-      end
+    :server_id => Socket.gethostname
   }.freeze
 
   def self.config_files_found
