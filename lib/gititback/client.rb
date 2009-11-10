@@ -16,18 +16,41 @@ class Gititback::Client
   end
   
   def should_ignore_source?(path)
-    @config.ignore_sources.include?(File.basename(path))
+    base_path = File.basename(path)
+    
+    @config.ignore_sources.each do |pattern|
+      if (File.fnmatch(pattern, path) or File.fnmatch(pattern, base_path) or path == pattern or base_path == pattern)
+        return true
+      end
+    end
+    
+    false
   end
   
-  def local_entities_list
-    expand_source_dirs.collect do |source, paths|
-      paths.collect do |path|
-        Gititback::Entity.new(@config, path)
-      end
-    end.flatten
+  def local_entities_list(reload = false)
+    @local_entities_list = nil if (reload)
+    @local_entities_list ||=
+      expand_source_dirs.collect do |source, paths|
+        paths.collect do |path|
+          Gititback::Entity.new(@config, path)
+        end
+      end.flatten
+  end
+  
+  def entity_for_path(path)
+    local_entities_list.find do |e|
+      path[0, e.path.length] == e.path
+    end
   end
   
   def server_id
-    @server_id ||= `uname -n`
+    @server_id ||= Gititback::Support.hostname
+  end
+  
+  def update_all!
+    self.local_entities_list.each do |entity|
+      yield(entity, :update_start) if (block_given?)
+      entity.update!
+    end
   end
 end

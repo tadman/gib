@@ -1,6 +1,5 @@
 require 'yaml'
 require 'ostruct'
-require 'socket'
 
 class Gititback::Config < OpenStruct
   CONFIG_FILE_FORMATS = %w[
@@ -33,7 +32,9 @@ class Gititback::Config < OpenStruct
     :ignore_files => %w[
       *.log
     ],
-    :server_id => Socket.gethostname,
+    :server_id => Gititback::Support.hostname,
+    :user_name => 'Gititback Archiver',
+    :user_email => "gititback@#{Gititback::Support.hostname}",
     :verbose => false
   }.freeze
 

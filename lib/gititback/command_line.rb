@@ -39,7 +39,34 @@ class Gititback::CommandLine
     
     case (command)
     when 'status'
-      puts "#{@config.server_id} Status:"
+      # ...
+      if (entity = @client.entity_for_path(Dir.getwd))
+        puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
+        puts '-' * 78
+        
+        archived_files = entity.archive.ls_files
+        entity_path_length = entity.path.length
+        
+        entity.files.each do |file|
+          if (relative_path = file[entity_path_length + 1, file.length])
+            if (File.directory?(file))
+              print '= '
+            else
+              if (archived_files[relative_path])
+                print "= "
+              else
+                print '+ '
+              end
+            end
+
+            puts relative_path
+          end
+        end
+      else
+        puts "Current directory is not part of a backupable entity. Use 'gib report' to see a list of those."
+      end
+    when 'report'
+      puts "#{@config.server_id} Entities:"
       puts '-' * 78
 
       @client.local_entities_list.each do |e|
@@ -91,6 +118,13 @@ class Gititback::CommandLine
               Gititback::Support.shortform_path(path) + (@client.should_ignore_source?(path) ? ' (Ignored)' : '')
             ]
           end
+        end
+      end
+    when 'update'
+      @client.update_all! do |entity, state|
+        case (state)
+        when :update_start
+          print Gititback::Support.shortform_path(entity.path)
         end
       end
     else

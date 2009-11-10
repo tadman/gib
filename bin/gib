@@ -7,7 +7,10 @@ $LOAD_PATH << File.expand_path(File.join('..', 'lib'), File.dirname(__FILE__))
 
 COMMAND_NAME = File.basename(__FILE__).freeze
 
+STDOUT.sync = true
+
 require 'gititback'
+require 'optparse'
 
 begin
   Gititback::CommandLine.interpret!
