@@ -5,4 +5,12 @@ class Gititback::Support
       h
     end
   end
+  
+  def self.home_dir
+    @home_dir = File.expand_path('~')
+  end
+  
+  def self.shortform_path(path)
+    path.sub(/^#{home_dir}/, '~')
+  end
 end

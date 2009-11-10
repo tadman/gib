@@ -30,7 +30,11 @@ class Gititback::Config < OpenStruct
     :ignore_sources => %w[
       lost+found
     ],
-    :server_id => Socket.gethostname
+    :ignore_files => %w[
+      *.log
+    ],
+    :server_id => Socket.gethostname,
+    :verbose => false
   }.freeze
 
   def self.config_files_found
@@ -41,7 +45,7 @@ class Gititback::Config < OpenStruct
   end
 
   def self.config_file_path=(path)
-    @config_file_path = File.expand_path(path)
+    @config_file_path = (path and File.expand_path(path))
   end
   
   def self.config_file_path
@@ -51,35 +55,38 @@ class Gititback::Config < OpenStruct
   def initialize(config = nil)
     marshal_load(
       DEFAULT_OPTIONS.merge(
-        __import_config(config || self.class.config_file_path)
+        __import_config(config)
       )
     )
   end
   
+  def to_h
+    marshal_dump
+  end
+  
 protected
   def __import_config(config)
-    case (config)
-    when String
-      config_data = nil
+    config = config ? Gititback::Support.symbolize_hash_keys(config) : { }
+    
+    config_data = nil
 
+    if (config_file = self.class.config_file_path)
       begin
-        config_data = YAML.load(config)
+        config_data = YAML.load(File.open(config_file))
+      rescue Errno::ENOENT => e
+        raise Gititback::Exception::ConfigurationError, "Could not open configuration file #{config_file} (#{e.class}: #{e.to_s})" 
       rescue Object => e
-        raise Gititback::Exception::ConfigurationError, "Could not process configuration file #{config} (#{e.class}: #{e.to_s})" 
+        raise Gititback::Exception::ConfigurationError, "Could not process configuration file #{config_file} (#{e.class}: #{e.to_s})" 
       end
       
       case (config_data)
       when Hash
-        Gititback::Support.symbolize_hash_keys(config_data)
+        config_data = Gititback::Support.symbolize_hash_keys(config_data)
       else
         raise Gititback::Exception::ConfigurationError, "Configuration file #{config} has an invalid structure, should be key/value"
       end
-    when Hash
-      Gititback::Support.symbolize_hash_keys(config)
-    when nil
-      { }
-    else
-      raise Gititback::Exception::ConfigurationError, "Invalid configuration type #{config.class} passed."
     end
+    
+    config_data ? config_data.merge(config) : config
   end
 end
