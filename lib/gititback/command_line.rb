@@ -1,3 +1,5 @@
+require 'optparse'
+
 class Gititback::CommandLine
   def self.interpret!
     new.perform!
