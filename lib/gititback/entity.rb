@@ -34,10 +34,10 @@ class Gititback::Entity
     return @archive if (@archive)
     
     if (archive_exists?)
-      @archive = Git.open(@path, :git_dir => archive_path)
+      @archive = Git.open(@path, :repository => archive_path, :index => archive_path + '/index')
     else
       Gititback::Support.prepare_archive_path(archive_path)
-      @archive = Git.init(@path, :git_dir => archive_path, :index_file => archive_path + '/index')
+      @archive = Git.init(@path, :repository => archive_path, :index => archive_path + '/index')
 
       @archive.config('user.name', @config.user_name)
       @archive.config('user.email', @config.user_email)
