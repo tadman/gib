@@ -39,7 +39,6 @@ class Gititback::CommandLine
     
     case (command)
     when 'status'
-      # ...
       if (entity = @client.entity_for_path(Dir.getwd))
         puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
         puts '-' * 78
@@ -100,6 +99,15 @@ class Gititback::CommandLine
         next if (file == Gititback::Config.config_file_path)
 
         puts file
+      end
+    when 'permissions'
+      if (entity = @client.entity_for_path(Dir.getwd))
+        puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
+        puts '-' * 78
+        
+        puts entity.contained_file_stats.to_yaml
+      else
+        puts "Current directory is not part of a backupable entity. Use 'gib report' to see a list of those."
       end
     when 'search'
       puts "#{@config.server_id} Search:"

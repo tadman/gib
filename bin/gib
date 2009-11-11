@@ -3,9 +3,15 @@
 # gititback
 #
 
-$LOAD_PATH << File.expand_path(File.join('..', 'lib'), File.dirname(__FILE__))
+script_path = File.expand_path(__FILE__, Dir.getwd)
 
-COMMAND_NAME = File.basename(__FILE__).freeze
+if (File.symlink?(script_path))
+  script_path = File.expand_path(File.readlink(script_path), File.dirname(script_path))
+end
+
+$LOAD_PATH << File.expand_path(File.join('..', 'lib'), File.dirname(script_path))
+
+COMMAND_NAME = File.basename(script_path).freeze
 
 STDOUT.sync = true
 

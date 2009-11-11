@@ -1,6 +1,8 @@
+require 'find'
+require 'etc'
+
 require 'rubygems' rescue nil
 require 'git'
-require 'find'
 
 class Gititback::Entity
   # Finds new backupable entities within the defined root
@@ -60,12 +62,42 @@ class Gititback::Entity
     files.sort
   end
   
+  def contained_file_stats
+    contained_files.inject({ }) do |h, path|
+      stat = File.lstat(path)
+      
+      info = {
+        'path' => relative_path_for(path),
+        'uid' => uid_descriptor(stat.uid),
+        'gid' => gid_descriptor(stat.gid),
+        'mode' => ('%04o' % (stat.mode & 07777))
+      }
+      
+      case (entry = h[stat.ino])
+      when Hash
+        h[stat.ino] = [ entry, info ]
+      when Array
+        entry << info
+      else
+        h[stat.ino] = info
+      end
+      
+      h
+    end
+  end
+  
+  def relative_path_for(path)
+    path[@path.length + 1, path.length] or '.'
+  end
+  
   def files(reload = false)
     @files = nil if (reload)
     @files ||= contained_files
   end
   
   def should_ignore_file?(path)
+    return true unless (File.file?(path) or File.symlink?(path) or File.directory?(path))
+    
     base_path = File.basename(path)
     
     @config.ignore_files.each do |pattern|
@@ -84,5 +116,18 @@ class Gititback::Entity
     else
       '-'
     end
+  end
+  
+protected
+  def uid_descriptor(uid)
+    info = Etc.getpwuid(uid)
+    
+    info ? "#{uid}:#{info.name}" : uid.to_s
+  end
+
+  def gid_descriptor(gid)
+    info = Etc.getgrgid(gid)
+    
+    info ? "#{gid}:#{info.name}" : gid.to_s
   end
 end
