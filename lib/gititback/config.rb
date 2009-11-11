@@ -31,6 +31,7 @@ class Gititback::Config < OpenStruct
     ],
     :ignore_files => %w[
       *.log
+      .DS_Store
     ],
     :server_id => Gititback::Support.hostname,
     :user_name => 'Gititback Archiver',

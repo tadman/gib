@@ -80,9 +80,9 @@ class Gititback::Entity
   def status
     case
     when archive_exists?
-      'Ready'
+      Time.now.to_s
     else
-      'New'
+      '-'
     end
   end
 end

@@ -8,9 +8,10 @@ class Gititback::Client
   # configuerd source dir.
   def expand_source_dirs(apply_ignore_filter = true)
     @config.source_dirs.inject({ }) do |h, source|
-      h[source] = Dir.glob(File.expand_path(source)).reject do |path|
-        apply_ignore_filter and should_ignore_source?(path)
-      end
+      h[source] =
+        Dir.glob(File.expand_path(source)).reject do |path|
+          !File.directory?(path) or (apply_ignore_filter and should_ignore_source?(path))
+        end
       h
     end
   end
