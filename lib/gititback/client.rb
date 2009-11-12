@@ -48,10 +48,17 @@ class Gititback::Client
     @server_id ||= Gititback::Support.hostname
   end
   
-  def update_all!
+  def update_all!(&block)
     self.local_entities_list.each do |entity|
-      yield(entity, :update_start) if (block_given?)
-      entity.update!
+      yield(:update_start, entity) if (block_given?)
+      entity.update!(&block)
+      yield(:update_finish, entity) if (block_given?)
     end
+  end
+  
+  def entity_for_working_directory
+    entity = entity_for_path(Dir.getwd)
+    yield(entity) if (block_given?)
+    entity
   end
 end

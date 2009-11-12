@@ -10,8 +10,8 @@ class Gititback::Config < OpenStruct
   
   CONFIG_FILE_PATHS = %w[
     /etc/gititback
-    /etc/gititback/gititback
-    ~/.gititback/gititback
+    /etc/gititback/config
+    ~/.gititback/config
   ].collect do |base|
     base = File.expand_path(base)
     CONFIG_FILE_FORMATS.collect do |ext|

@@ -39,7 +39,7 @@ class Gititback::CommandLine
     
     case (command)
     when 'status'
-      if (entity = @client.entity_for_path(Dir.getwd))
+      if (entity = @client.entity_for_working_directory)
         puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
         puts '-' * 78
         
@@ -101,7 +101,7 @@ class Gititback::CommandLine
         puts file
       end
     when 'permissions'
-      if (entity = @client.entity_for_path(Dir.getwd))
+      if (entity = @client.entity_for_working_directory)
         puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
         puts '-' * 78
         
@@ -129,10 +129,49 @@ class Gititback::CommandLine
         end
       end
     when 'update'
-      @client.update_all! do |entity, state|
+      @client.entity_for_working_directory do |entity|
+        puts Gititback::Support.shortform_path(entity.path) if (@config.verbose)
+        entity.update! do |state, path|
+          if (@config.verbose)
+            case (state)
+            when :add_file
+              puts "+ #{path}"
+            when :update_file
+              puts "* #{path}"
+            when :remove_file
+              puts "- #{path}"
+            end
+          end
+        end
+      end
+    when 'run'
+      stats = Hash.new(0)
+
+      @client.update_all! do |state, entity|
         case (state)
         when :update_start
           print Gititback::Support.shortform_path(entity.path)
+
+          if (@config.verbose)
+            puts
+          end
+        when :add_file
+          stats[state] += 1
+          if (@config.verbose)
+            puts "+ #{entity}"
+          end
+        when :update_file
+          stats[state] += 1
+          if (@config.verbose)
+            puts "* #{entity}"
+          end
+        when :remove_file
+          stats[state] += 1
+          if (@config.verbose)
+            puts "- #{entity}"
+          end
+        when :update_finish
+          puts " (#{stats[:add_file]} added, #{stats[:update_file]} updated, #{stats[:remove_file]} removed)"
         end
       end
     else

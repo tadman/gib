@@ -26,4 +26,6 @@ rescue Gititback::Exception::InvalidCommand => e
 rescue OptionParser::InvalidOption => e
   STDERR.puts "#{COMMAND_NAME}: #{e}"
   exit
+rescue Interrupt
+  puts "Interrupted."
 end
