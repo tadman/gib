@@ -37,6 +37,10 @@ class Gititback::Entity
   def archive_path
     File.expand_path(File.join('archive', "#{unique_id}.git"), @config.backup_location)
   end
+  
+  def archive_index_path
+    File.join(archive_path, 'index')
+  end
 
   def archive_lock_path
     File.expand_path(File.join('archive', ".#{unique_id}.lock"), @config.backup_location)

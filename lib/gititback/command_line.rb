@@ -144,6 +144,11 @@ class Gititback::CommandLine
           end
         end
       end
+    when 'env'
+      @client.entity_for_working_directory do |entity|
+        puts "GIT_DIR=#{entity.archive_path}"
+        puts "GIT_INDEX_FILE=#{entity.archive_index_path}"
+      end
     when 'log'
       @client.entity_for_working_directory do |entity|
         puts entity.archive.log.inspect
