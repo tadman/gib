@@ -145,11 +145,12 @@ class Gititback::CommandLine
         end
       end
     when 'run'
-      stats = Hash.new(0)
+      stats = nil
 
       @client.update_all! do |state, entity|
         case (state)
         when :update_start
+          stats = Hash.new(0)
           print Gititback::Support.shortform_path(entity.path)
 
           if (@config.verbose)
