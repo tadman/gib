@@ -25,9 +25,13 @@ class Gititback::Entity
     @path
   end
   
+  def path_id
+    "#{@config.server_id}://#{@path}"
+  end
+  
   def unique_id
     @unique_id ||=
-      Digest::SHA1.hexdigest("#{@config.server_id}://#{@path}")
+      Digest::SHA1.hexdigest(path_id)
   end
   
   def archive_path
@@ -216,6 +220,8 @@ class Gititback::Entity
       archive.with_working(archive_path) do
         archive.add(info_file_path)
       end
+      
+      archive.commit("Archive of #{path_id} (#{ARGV.join(' ')})", :allow_empty => true)
     end
   end
   

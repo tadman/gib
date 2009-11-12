@@ -144,6 +144,10 @@ class Gititback::CommandLine
           end
         end
       end
+    when 'log'
+      @client.entity_for_working_directory do |entity|
+        puts entity.archive.log.inspect
+      end
     when 'run'
       stats = nil
 
