@@ -38,8 +38,16 @@ class Gititback::CommandLine
     command = @args.first
     
     case (command)
+    when 'state'
+      if (entity = @client.entity_for_working_directory)
+        entity.archive.status.each do |info|
+          puts "%1s %s" % [ info.type, info.path ]
+        end
+      end
     when 'status'
       if (entity = @client.entity_for_working_directory)
+        status = entity.archive.status
+        
         puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
         puts '-' * 78
         
@@ -49,12 +57,16 @@ class Gititback::CommandLine
         entity.files.each do |file|
           if (relative_path = file[entity_path_length + 1, file.length])
             if (File.directory?(file))
-              print '= '
+              print '@ '
             else
-              if (archived_files[relative_path])
-                print "= "
+              if (file_status = status[relative_path])
+                if (file_status.type == 'M')
+                  print "M "
+                else
+                  print "- "
+                end
               else
-                print '+ '
+                print 'A '
               end
             end
 
@@ -135,11 +147,11 @@ class Gititback::CommandLine
           if (@config.verbose)
             case (state)
             when :add_file
-              puts "+ #{path}"
+              puts "A #{path}"
             when :update_file
-              puts "* #{path}"
+              puts "M #{path}"
             when :remove_file
-              puts "- #{path}"
+              puts "R #{path}"
             end
           end
         end

@@ -62,6 +62,8 @@ class Gititback::Entity
 
       @archive.config('user.name', @config.user_name)
       @archive.config('user.email', @config.user_email)
+      
+      @archive.commit("Initialize archive of #{path_id} (#{ARGV.join(' ')})", :allow_empty => true)
     end
      
     @archive
@@ -91,7 +93,9 @@ class Gititback::Entity
           'path' => relative_path_for(path),
           'uid' => uid_descriptor(stat.uid),
           'gid' => gid_descriptor(stat.gid),
-          'mode' => ('%04o' % (stat.mode & 07777))
+          'mode' => ('%04o' % (stat.mode & 07777)),
+          'mtime' => stat.mtime.to_i,
+          'ctime' => stat.ctime.to_i
         }
       
         case (entry = h[stat.ino])
@@ -164,6 +168,12 @@ class Gititback::Entity
     "#{archive_path}/#{INFO_FILE_NAME}"
   end
   
+  def existing_info
+    YAML.load(open(info_file_path))
+  rescue
+    { }
+  end
+  
   def locked?
     File.exist?(archive_lock_path)
   end
@@ -189,6 +199,8 @@ class Gititback::Entity
 
   def update!
     lock! do
+      status(true)
+      
       _archivable_files = archivable_files
       _archived_files = archived_files
     
@@ -203,11 +215,10 @@ class Gititback::Entity
         archive.add_with_opts(files, :force => true) unless (files.empty?)
       end
 
-      files_updated.each_slice(FILE_INJECT_SIZE) do |files|
-        files.each do |path|
-          yield(:update_file, path) if (block_given?)
+      if (block_given?)
+        files_updated.each do |path|
+          yield(:update_file, path) if (status[path].type)
         end
-        archive.add_with_opts(files, :force => true) unless (files.empty?)
       end
 
       files_removed.each_slice(FILE_INJECT_SIZE) do |files|
@@ -216,17 +227,51 @@ class Gititback::Entity
         end
         archive.remove(files) unless (files.empty?)
       end
-    
-      open(info_file_path, 'w') do |f|
-        f.write(contained_file_stats.to_yaml)
-      end
-    
-      archive.with_working(archive_path) do
-        archive.add(info_file_path)
-      end
       
-      archive.commit("Archive of #{path_id} (#{ARGV.join(' ')})", :allow_empty => true)
+      should_amend = false
+
+      if (modifications?)
+        archive.commit("Archive of #{path_id} (#{ARGV.join(' ')})", :add_all => true)
+        should_amend = true
+      end
+
+      archive.with_working(archive_path) do
+        update_info_file!
+
+        archive.add(INFO_FILE_NAME)
+        
+        status(true) # Reload
+
+        if (file_modified?(INFO_FILE_NAME))
+          archive.commit("Archive of #{path_id} (#{ARGV.join(' ')})", :amend => should_amend)
+        end
+      end
     end
+  end
+  
+  def status(reload = false)
+    @status = nil if (reload)
+    @status ||= archive.status
+  end
+  
+  def update_info_file!
+    open(info_file_path, 'w') do |f|
+      f.write(contained_file_stats.to_yaml)
+    end
+  end
+  
+  def modifications?
+    status.each do |info|
+      if (info.type and info.path != INFO_FILE_NAME)
+        return true
+      end
+    end
+
+    false
+  end
+  
+  def file_modified?(path)
+    !status[path] or status[path].type
   end
   
 protected
