@@ -112,6 +112,16 @@ class Gititback::CommandLine
 
         puts file
       end
+
+      if (entity = @client.entity_for_working_directory)
+        puts
+        puts Gititback::Support.shortform_path(entity.archive_path)
+        puts '-' * 78
+        
+        entity.archive.config.each do |key, value|
+          puts "%-40s %s" % [ key, value ]
+        end
+      end
     when 'permissions'
       if (entity = @client.entity_for_working_directory)
         puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
@@ -155,6 +165,7 @@ class Gititback::CommandLine
             end
           end
         end
+        entity.push!
       end
     when 'env'
       @client.entity_for_working_directory do |entity|

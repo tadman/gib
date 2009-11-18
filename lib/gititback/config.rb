@@ -20,6 +20,7 @@ class Gititback::Config < OpenStruct
   end.flatten.freeze
   
   DEFAULT_OPTIONS = {
+    :remote_url => 'http://gititback.com/',
     :source_dirs => %w[
       /web/*
       /home/*
