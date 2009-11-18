@@ -350,6 +350,6 @@ protected
     
     info ? "#{gid}:#{info.name}" : gid.to_s
   rescue ArgumentError
-    uid.to_s
+    gid.to_s
   end
 end
