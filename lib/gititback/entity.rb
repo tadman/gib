@@ -24,7 +24,7 @@ class Gititback::Entity
   end
   
   def path_id
-    "#{@config.server_id}://#{@path}"
+    "#{@config.server_id}:#{@path}"
   end
   
   def unique_id
@@ -62,7 +62,7 @@ class Gititback::Entity
       @archive.config('user.name', @config.user_name)
       @archive.config('user.email', @config.user_email)
       
-      @archive.commit("Initialize archive of #{path_id} (#{ARGV.join(' ')})", :allow_empty => true)
+      @archive.commit("Initialize archive of #{path_id}", :allow_empty => true)
     end
      
     @archive
