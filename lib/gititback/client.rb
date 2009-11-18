@@ -58,7 +58,7 @@ class Gititback::Client
   
   def entity_for_working_directory
     entity = entity_for_path(Dir.getwd)
-    yield(entity) if (block_given?)
+    yield(entity) if (block_given? and entity)
     entity
   end
 end
