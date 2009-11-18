@@ -339,6 +339,8 @@ protected
     info = Etc.getpwuid(uid)
     
     info ? "#{uid}:#{info.name}" : uid.to_s
+  rescue ArgumentError
+    uid.to_s
   end
 
   # Returns a simplified id:name descriptor for a given group id number (gid)
@@ -347,5 +349,7 @@ protected
     info = Etc.getgrgid(gid)
     
     info ? "#{gid}:#{info.name}" : gid.to_s
+  rescue ArgumentError
+    uid.to_s
   end
 end
