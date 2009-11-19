@@ -12,8 +12,8 @@ class Gititback::Client
   # Searches through the configured source_dirs for entities which match
   # the specification. Returns a hash of arrays of paths indexed by
   # configuerd source dir.
-  def expand_source_dirs(apply_ignore_filter = true)
-    @config.source_dirs.inject({ }) do |h, source|
+  def expand_entities_list(apply_ignore_filter = true)
+    @config.entities.inject({ }) do |h, source|
       h[source] =
         Dir.glob(File.expand_path(source)).reject do |path|
           !File.directory?(path) or (apply_ignore_filter and should_ignore_source?(path))
@@ -26,7 +26,7 @@ class Gititback::Client
   def should_ignore_source?(path)
     base_path = File.basename(path)
     
-    @config.ignore_sources.each do |pattern|
+    @config.ignore_entities.each do |pattern|
       if (File.fnmatch(pattern, path) or File.fnmatch(pattern, base_path) or path == pattern or base_path == pattern)
         return true
       end
@@ -38,19 +38,23 @@ class Gititback::Client
   def local_entities_list(reload = false)
     @local_entities_list = nil if (reload)
     @local_entities_list ||=
-      expand_source_dirs.collect do |source, paths|
+      expand_entities_list.collect do |source, paths|
         paths.collect do |path|
           Gititback::Entity.new(@config, path)
         end
       end.flatten
   end
   
+  # Returns the entity for the given path, or nil if none is found
   def entity_for_path(path)
     local_entities_list.find do |e|
       path[0, e.path.length] == e.path
     end
   end
   
+  # Updates all entities sequentially. An optional block is called with the
+  # arguments [entity, operation] where operation is one of :update_start
+  # or :update_end depending on the stage.
   def update_all!(&block)
     self.local_entities_list.each do |entity|
       yield(:update_start, entity) if (block_given?)

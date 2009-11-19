@@ -21,23 +21,25 @@ class Gititback::Config < OpenStruct
   
   DEFAULT_OPTIONS = {
     :remote_url => 'http://gititback.com/',
-    :source_dirs => %w[
+    :entities => %w[
       /web/*
       /home/*
       /etc
     ],
-    :backup_location => '/var/spool/gititback',
-    :ignore_sources => %w[
+    :ignore_entities => %w[
       lost+found
     ],
     :ignore_files => %w[
       *.log
       .DS_Store
     ],
+    :local_archive => '/var/spool/gititback',
     :server_id => Gititback::Support.hostname,
     :user_name => 'Gititback Archiver',
     :user_email => "gititback@#{Gititback::Support.hostname}",
-    :verbose => false
+    :verbose => false,
+    :databases => {
+    }
   }.freeze
 
   def self.config_files_found

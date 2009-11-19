@@ -15,6 +15,7 @@ COMMAND_NAME = File.basename(script_path).freeze
 
 STDOUT.sync = true
 
+require 'rubygems'
 require 'gititback'
 require 'optparse'
 

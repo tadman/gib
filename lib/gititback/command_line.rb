@@ -81,7 +81,7 @@ class Gititback::CommandLine
         end
       end
     when 'status'
-      if (entity = @client.entity_for_working_directory)
+      @client.entity_for_working_directory! do |entity|
         status = entity.archive.status
         
         puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
@@ -109,8 +109,6 @@ class Gititback::CommandLine
             puts relative_path
           end
         end
-      else
-        puts "Current directory is not part of a backupable entity. Use 'gib report' to see a list of those."
       end
     when 'report'
       puts "#{@config.server_id} Entities:"
@@ -172,7 +170,7 @@ class Gititback::CommandLine
       home_dir = File.expand_path('~')
       count = 0
       
-      @client.expand_source_dirs(false).each do |source, paths|
+      @client.expand_entities_list(false).each do |source, paths|
         if (paths.empty?)
           puts "%-40s %s" % [ source, '-' ]
         else

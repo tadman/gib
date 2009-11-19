@@ -33,7 +33,7 @@ class Gititback::Entity
   end
   
   def archive_path
-    File.expand_path(File.join('archive', "#{unique_id}.git"), @config.backup_location)
+    File.expand_path(File.join('archive', "#{unique_id}.git"), @config.local_archive)
   end
   
   def archive_index_path
@@ -41,7 +41,7 @@ class Gititback::Entity
   end
 
   def archive_lock_path
-    File.expand_path(File.join('archive', ".#{unique_id}.lock"), @config.backup_location)
+    File.expand_path(File.join('archive', ".#{unique_id}.lock"), @config.local_archive)
   end
   
   def archive_exists?
@@ -57,6 +57,8 @@ class Gititback::Entity
     if (archive_exists?)
       @archive = Git.open(@path, :repository => archive_path, :index => archive_path + '/index')
     else
+      Gititback::Support.prepare_archive_path(archive_path)
+      
       @archive = Git.init(@path, :repository => archive_path, :index => archive_path + '/index')
 
       @archive.config('user.name', @config.user_name)
@@ -278,6 +280,7 @@ class Gititback::Entity
     url
   end
 
+  # Performs a push operation on the local archive to the remote, if defined.
   def push!
     if (remote?)
       archive.push('origin', 'master')
