@@ -1,7 +1,7 @@
 require 'digest/sha1'
 
 module Gititback
-  VERSION = '0.0.2'
+  VERSION = '0.0.3'
   
   autoload(:Client, 'gititback/client')
   autoload(:Config, 'gititback/config')
@@ -18,6 +18,9 @@ module Gititback
     end
     
     class RuntimeError < ::Exception
+    end
+    
+    class NonEntity < ::Exception
     end
   end
   

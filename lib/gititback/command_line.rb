@@ -1,31 +1,65 @@
 require 'optparse'
 
 class Gititback::CommandLine
+  VALID_COMMANDS = {
+    :contents => 'Shows the state of the contents for the current entity',
+    :status => 'Shows the status of the current entity including directories',
+    :report => 'Reports on the status of all local entities',
+    :config => 'Describes all the configuration options being applied',
+    :search => 'Searches for entities which match ',
+    :update => 'Updates the current entity',
+    :env => 'Environment variables used by git to execute',
+    :run => 'Run an update on all local entities'
+  }.freeze
+  
   def self.interpret!
     new.perform!
+  end
+  
+  def self.show_help
+    puts option_parser({ })
+  end
+  
+  def self.option_parser(options)
+    OptionParser.new do |op|
+      op.banner = "Usage: #{COMMAND_NAME} [options] <command>"
+      
+      op.separator('')
+      op.separator('Common options:')
+
+      op.on('-v', '--[no-]verbose', 'Run verbosely') do |v|
+        options[:verbose] = v
+      end
+
+      op.on('-c', '--config=s', 'Specify alternate configuration file') do |v|
+        options[:config] = v
+      end
+
+      op.on('-V', '--version', 'Show version information') do
+        puts "#{COMMAND_NAME}: Version #{Gititback::VERSION}"
+        exit
+      end
+      
+      op.on('-h', '--help') do
+        puts op
+        exit
+      end
+        
+      op.separator('')
+      op.separator("Common command names:")
+
+      VALID_COMMANDS.collect do |command, description|
+        "  %-12s %s\n" % [ command, description ]
+      end.sort.each do |info|
+        op.separator(info)
+      end
+    end
   end
   
   def initialize
     @options = options = { }
     
-    @parser =
-      OptionParser.new do |op|
-        op.banner = "Usage: gib [options] <command>"
-
-        op.on("-v", "--[no-]verbose", "Run verbosely") do |v|
-          options[:verbose] = v
-        end
-
-        op.on("-c", "--config=s", "Specify alternate configuration file") do |v|
-          options[:config] = v
-        end
-
-        op.on("-V", "--version", "Show version information") do
-          puts "#{COMMAND_NAME}: Version #{Gititback::VERSION}"
-          exit
-        end
-      end
-      
+    @parser = self.class.option_parser(options)
     @args = @parser.parse!
     
     Gititback::Config.config_file_path = @options.delete(:config)
@@ -38,10 +72,12 @@ class Gititback::CommandLine
     command = @args.first
     
     case (command)
-    when 'state'
+    when 'contents'
       if (entity = @client.entity_for_working_directory)
         entity.archive.status.each do |info|
-          puts "%1s %s" % [ info.type, info.path ]
+          unless (Gititback::Entity::INTERNAL_FILES.include?(info.path))
+            puts "%1s %s" % [ info.type, info.path ]
+          end
         end
       end
     when 'status'
@@ -123,13 +159,11 @@ class Gititback::CommandLine
         end
       end
     when 'permissions'
-      if (entity = @client.entity_for_working_directory)
+      @client.entity_for_working_directory! do |entity|
         puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
         puts '-' * 78
         
         puts entity.contained_file_stats.to_yaml
-      else
-        puts "Current directory is not part of a backupable entity. Use 'gib report' to see a list of those."
       end
     when 'search'
       puts "#{@config.server_id} Search:"
@@ -151,7 +185,7 @@ class Gititback::CommandLine
         end
       end
     when 'update'
-      @client.entity_for_working_directory do |entity|
+      @client.entity_for_working_directory! do |entity|
         puts Gititback::Support.shortform_path(entity.path) if (@config.verbose)
         entity.update! do |state, path|
           if (@config.verbose)
@@ -171,6 +205,8 @@ class Gititback::CommandLine
       @client.entity_for_working_directory do |entity|
         puts "GIT_DIR=#{entity.archive_path}"
         puts "GIT_INDEX_FILE=#{entity.archive_index_path}"
+      end or begin
+        puts ""
       end
     when 'log'
       @client.entity_for_working_directory do |entity|
@@ -207,6 +243,8 @@ class Gititback::CommandLine
           puts " (#{stats[:add_file]} added, #{stats[:update_file]} updated, #{stats[:remove_file]} removed)"
         end
       end
+    when 'help', nil
+      self.class.show_help
     else
       raise Gititback::Exception::InvalidCommand, "Invalid command #{command}"
     end

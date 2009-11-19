@@ -3,6 +3,12 @@ class Gititback::Client
     @config = config
   end
 
+  # Returns the current server_id value which is typically the
+  # FQDN hostname
+  def server_id
+    @server_id ||= Gititback::Support.hostname
+  end
+  
   # Searches through the configured source_dirs for entities which match
   # the specification. Returns a hash of arrays of paths indexed by
   # configuerd source dir.
@@ -16,6 +22,7 @@ class Gititback::Client
     end
   end
   
+  # Returns true if the given path should be ignored, false otherwise
   def should_ignore_source?(path)
     base_path = File.basename(path)
     
@@ -44,10 +51,6 @@ class Gititback::Client
     end
   end
   
-  def server_id
-    @server_id ||= Gititback::Support.hostname
-  end
-  
   def update_all!(&block)
     self.local_entities_list.each do |entity|
       yield(:update_start, entity) if (block_given?)
@@ -56,9 +59,26 @@ class Gititback::Client
     end
   end
   
+  # Returns the entity for the current working directory. An optional block
+  # will be called with the entity if one is found.
   def entity_for_working_directory
     entity = entity_for_path(Dir.getwd)
     yield(entity) if (block_given? and entity)
+    entity
+  end
+
+  # Returns the entity for the current working directory. An optional block
+  # will be called with the entity if one is found, otherwise an exception
+  # of type Gititback::Exception::NonEntity will be thrown.
+  def entity_for_working_directory!
+    entity = entity_for_working_directory
+    
+    unless (entity)
+      raise Gititback::Exception::NonEntity
+    end
+    
+    yield(entity) if (block_given?)
+    
     entity
   end
 end

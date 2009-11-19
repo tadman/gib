@@ -23,9 +23,13 @@ begin
 rescue Gititback::Exception::InvalidCommand => e
   STDERR.puts "#{COMMAND_NAME}: #{e}"
   STDERR.puts "  * Run '#{COMMAND_NAME} --help' to show valid commands."
+  exit(-1)
+rescue Gititback::Exception::NonEntity => e
+  STDERR.puts "Current directory is not part of a backupable entity. Use 'gib report' to see a list of those."
+  exit(-2)
 rescue OptionParser::InvalidOption => e
   STDERR.puts "#{COMMAND_NAME}: #{e}"
-  exit
+  exit(-3)
 rescue Interrupt
   puts "Interrupted."
 end

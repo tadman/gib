@@ -1,21 +1,6 @@
 require 'rubygems'
 require 'rake'
 
-begin
-  require 'jeweler'
-  Jeweler::Tasks.new do |gem|
-    gem.name = "gititback"
-    gem.summary = %Q{GitItBack Server Backup and Recovery System}
-    gem.description = %Q{Uses git to store backups of critical system data}
-    gem.email = "github@tadman.ca"
-    gem.homepage = "http://github.com/theworkinggroup/gititback"
-    gem.authors = %w[ theworkinggroup tadman ]
-    gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
-  end
-rescue LoadError
-  puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
-end
-
 require 'rake/testtask'
 Rake::TestTask.new(:test) do |test|
   test.libs << 'lib' << 'test'
@@ -35,8 +20,6 @@ rescue LoadError
     abort "RCov is not available. In order to run rcov, you must: sudo gem install spicycode-rcov"
   end
 end
-
-task :test => :check_dependencies
 
 task :default => :test
 
