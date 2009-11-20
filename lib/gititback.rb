@@ -14,6 +14,9 @@ module Gititback
     class ConfigurationError < ::Exception
     end
 
+    class RuntimeError < ::Exception
+    end
+
     class InvalidCommand < ::Exception
     end
     

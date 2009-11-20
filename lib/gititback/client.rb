@@ -3,6 +3,36 @@ class Gititback::Client
     @config = config
   end
 
+  def connection(name)
+    # Only load mysql dependency if this feature is used
+    require 'mysql'
+    
+    name = name.to_sym
+    
+    @connection ||= { }
+    
+    @connection[name] ||= begin
+      connection_config = @config.connections[name]
+      
+      unless (connection_config)
+        raise Gititback::Exception::RuntimeError, "No database connection named '#{name}' defined in configuration."
+      end
+
+      conn = Mysql.new(
+        connection_config[:socket] ? nil : (connection_config[:host] || 'localhost'),
+        connection_config[:username] || 'root',
+        connection_config[:password] || '',
+        '',
+        connection_config[:socket] ? nil : (connection_config[:port] || 3306),
+        connection_config[:socket]
+      )
+      
+      yield(conn) if (block_given?)
+      
+      conn
+    end
+  end
+
   # Returns the current server_id value which is typically the
   # FQDN hostname
   def server_id
@@ -15,8 +45,23 @@ class Gititback::Client
   def expand_entities_list(apply_ignore_filter = true)
     @config.entities.inject({ }) do |h, source|
       h[source] =
-        Dir.glob(File.expand_path(source)).reject do |path|
-          !File.directory?(path) or (apply_ignore_filter and should_ignore_source?(path))
+        case (source)
+        when /^mysql:\/\/([^\/]+)/
+          db_list = [ ]
+
+          connection($1) do |c|
+            c.query("SHOW DATABASES") do |res|
+              while (row = res.fetch_row)
+                db_list << row[0]
+              end
+            end
+          end
+
+          db_list
+        else
+          Dir.glob(File.expand_path(source)).reject do |path|
+            !File.directory?(path) or (apply_ignore_filter and should_ignore_source?(path))
+          end
         end
       h
     end

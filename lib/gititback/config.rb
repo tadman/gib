@@ -38,7 +38,7 @@ class Gititback::Config < OpenStruct
     :user_name => 'Gititback Archiver',
     :user_email => "gititback@#{Gititback::Support.hostname}",
     :verbose => false,
-    :databases => {
+    :connections => {
     }
   }.freeze
 

@@ -31,6 +31,12 @@ rescue Gititback::Exception::NonEntity => e
 rescue OptionParser::InvalidOption => e
   STDERR.puts "#{COMMAND_NAME}: #{e}"
   exit(-3)
+rescue Gititback::Exception::ConfigurationError => e
+  STDERR.puts "#{COMMAND_NAME}: #{e}"
+  exit(-4)
+rescue Gititback::Exception::RuntimeError => e
+  STDERR.puts "#{COMMAND_NAME}: #{e}"
+  exit(-5)
 rescue Interrupt
   puts "Interrupted."
 end

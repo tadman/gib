@@ -170,7 +170,7 @@ class Gititback::CommandLine
       home_dir = File.expand_path('~')
       count = 0
       
-      @client.expand_entities_list(false).each do |source, paths|
+      @client.expand_entities_list(false).to_a.sort_by { |s| s[0] }.each do |source, paths|
         if (paths.empty?)
           puts "%-40s %s" % [ source, '-' ]
         else
