@@ -201,7 +201,7 @@ class Gititback::CommandLine
             end
           end
         end
-        puts "(#{stats[:add_file]} added, #{stats[:update_file]} updated, #{stats[:remove_file]} removed)"
+        puts "COMPLETED: #{stats[:add_file]} added, #{stats[:update_file]} updated, #{stats[:remove_file]} removed"
       end
     when 'env'
       @client.entity_for_working_directory do |entity|
@@ -221,11 +221,9 @@ class Gititback::CommandLine
         case (state)
         when :update_start
           stats = Hash.new(0)
-          print Gititback::Support.shortform_path(entity.path)
-
-          if (@config.verbose)
-            puts
-          end
+          puts '-' * 78
+          puts "BACKING UP: " + Gititback::Support.shortform_path(entity.path)
+          puts '-' * 78
         when :add_file
           stats[state] += 1
           if (@config.verbose)
@@ -242,7 +240,8 @@ class Gititback::CommandLine
             puts "R #{entity}"
           end
         when :update_finish
-          puts " (#{stats[:add_file]} added, #{stats[:update_file]} updated, #{stats[:remove_file]} removed)"
+          puts "COMPLETED: #{stats[:add_file]} added, #{stats[:update_file]} updated, #{stats[:remove_file]} removed"
+          puts
         end
       end
     when 'help', nil

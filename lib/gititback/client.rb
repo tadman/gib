@@ -62,7 +62,6 @@ class Gititback::Client
           Gititback::Entity.new(@config, path, source)
         end
       end.flatten
-      
   end
   
   # Returns the entity for the given path, or nil if none is found

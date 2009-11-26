@@ -21,6 +21,8 @@ class Gititback::Entity
       @database_name      = path
       @path               = File.expand_path(File.join(@config.local_archive, 'archive', 'databases', $1, path))
       @connection_config  = @config.connections[$1.to_sym]
+      @dump_filename      = @database_name + '.sql'
+      @dump_destination   = File.join(archive.dir.path, @dump_filename)
     else
       @entity_type        = :folder
       @path               = path
@@ -89,7 +91,6 @@ class Gititback::Entity
       @archive.config('user.email', @config.user_email)
       
       @archive.commit("Initialize archive of #{path_id}", :allow_empty => true)
-      puts " (created new archive): #{archive_path}"
     end
     @archive
   end
@@ -237,63 +238,72 @@ class Gititback::Entity
   # Performs an update on the given entity, applying all outstanding changes
   def update!
     lock! do
-      status(true)
-      
       if is_mysql_entity?
-        dump_database
-      end
-      _archivable_files = archivable_files.sort
-      _archived_files = archived_files.sort
+        dump_database 
+        archive.with_working(path) do
+          archive.add(@dump_filename)
+          status(true) # Reload
+          if (file_modified?(@dump_filename))
+            archive.commit("Archive of #{path_id} (#{COMMAND_NAME} #{ARGV.join(' ')})")
+          end
+          if status.added.flatten.include?(@dump_filename)
+            yield(:add_file, @dump_destination) if (block_given?)
+          else
+            yield(:update_file, @dump_destination) if (status[@dump_filename].type && block_given?)
+          end
+        end
+        self.push!
+        cleanup_database_dump
+      else
+        status(true)
+        _archivable_files = archivable_files.sort
+        _archived_files = archived_files.sort
     
-      files_added = (_archivable_files - _archived_files)
-      files_updated = (_archivable_files & _archived_files)
-      files_removed = (_archived_files - _archivable_files - INTERNAL_FILES)
+        files_added = (_archivable_files - _archived_files)
+        files_updated = (_archivable_files & _archived_files)
+        files_removed = (_archived_files - _archivable_files - INTERNAL_FILES)
   
-      files_added.each_slice(FILE_INJECT_SIZE) do |files|
-        files.each do |path|
-          yield(:add_file, path) if (block_given?)
+        files_added.each_slice(FILE_INJECT_SIZE) do |files|
+          files.each do |path|
+            yield(:add_file, path) if (block_given?)
+          end
+          archive.add_with_opts(files, :force => true) unless (files.empty?)
         end
-        archive.add_with_opts(files, :force => true) unless (files.empty?)
-      end
 
-      if (block_given?)
-        files_updated.each do |path|
-          yield(:update_file, path) if (status[path].type)
+        if (block_given?)
+          files_updated.each do |path|
+            yield(:update_file, path) if (status[path].type)
+          end
         end
-      end
 
-      files_removed.each_slice(FILE_INJECT_SIZE) do |files|
-        files.each do |path|
-          yield(:remove_file, path) if (block_given?)
+        files_removed.each_slice(FILE_INJECT_SIZE) do |files|
+          files.each do |path|
+            yield(:remove_file, path) if (block_given?)
+          end
+          archive.remove(files) unless (files.empty?)
         end
-        archive.remove(files) unless (files.empty?)
-      end
     
-      should_amend = false
+        should_amend = false
 
-      if (modifications?)
-        archive.commit("Archive of #{path_id} (#{COMMAND_NAME} #{ARGV.join(' ')})", :add_all => true)
-        should_amend = true
-      end
+        if (modifications?)
+          archive.commit("Archive of #{path_id} (#{COMMAND_NAME} #{ARGV.join(' ')})", :add_all => true)
+          should_amend = true
+        end
 
-      archive.with_working(archive_path) do
-        update_info_file!
+        archive.with_working(archive_path) do
+          update_info_file!
 
-        archive.add(INFO_FILE_NAME)
-      
-        status(true) # Reload
+          archive.add(INFO_FILE_NAME)
+    
+          status(true) # Reload
 
-        if (file_modified?(INFO_FILE_NAME))
-          archive.commit("Archive of #{path_id} (#{COMMAND_NAME} #{ARGV.join(' ')})", :amend => should_amend)
+          if (file_modified?(INFO_FILE_NAME))
+            archive.commit("Archive of #{path_id} (#{COMMAND_NAME} #{ARGV.join(' ')})", :amend => should_amend)
+          end
         end
       end
+      self.push!
     end
-    self.push!
-    
-    if is_mysql_entity?
-      cleanup_database_dump
-    end
-    
   end
 
   def remote_url
@@ -371,12 +381,12 @@ class Gititback::Entity
   
   def dump_database
     db = Gititback::Database.new(@connection_config)
-    db.dump(@database_name, archive.dir.path)
+    db.dump(@database_name, @dump_destination)
   end
 
   def cleanup_database_dump
     db = Gititback::Database.new(@connection_config)
-    db.cleanup_dump(@database_name, archive.dir.path)
+    db.cleanup_dump(@database_name, @dump_destination)
   end
 
 protected

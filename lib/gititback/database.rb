@@ -31,9 +31,8 @@ class Gititback::Database
   
   # For more details on the mysqldump options see
   # http://dev.mysql.com/doc/refman/5.1/en/mysqldump.htm
-  def dump(database_name, archive_path)
-    puts "Dummping #{database_name} ..."
-    backup_filename = "#{database_name}.sql"
+  def dump(database_name, dst)
+    print "Dummping #{database_name} ..."
     command = "mysqldump5"
     command << " -u #{@username}"
     command << " --skip-comments"
@@ -42,8 +41,7 @@ class Gititback::Database
     command << " --quick"
     command << " -p #{@password}" unless @password.blank?
     command << " #{database_name}"
-    command << " > #{archive_path}/#{backup_filename}"
-    puts command
+    command << " > #{dst}"
     output = `#{command}`
     unless $?.success?
       puts "Error: #{output}"
@@ -52,8 +50,7 @@ class Gititback::Database
     end
   end
   
-  def cleanup_dump(database_name, archive_path)
-    backup_filename = "#{database_name}.sql"
-    FileUtils.rm(File.join(archive_path, backup_filename))
+  def cleanup_dump(database_name, dst)
+    FileUtils.rm(dst)
   end
 end
