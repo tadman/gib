@@ -69,6 +69,28 @@ class Gititback::Config < OpenStruct
     marshal_dump
   end
   
+  def pretty_print(hash = self.to_h)
+    hash.collect do |key, value|
+      case (value)
+      when Array
+        value.each_with_index do |item, i|
+          puts "%-20s %s" % [ (i == 0 ? key : ''), item ]
+        end
+      when Hash
+        print "%-20s " % [key]        
+        value.collect do |conn_name, conn_values|
+          puts "%-20s" % [conn_name]
+          conn_values.collect do |k, v|
+            puts (' ' * 25) + "%-15s %s" % [k, v]
+          end
+        end
+      else
+        puts "%-20s %s" % [ key, value ]
+      end
+    end
+    
+  end
+  
 protected
   def __import_config(config)
     config = config ? Gititback::Support.symbolize_hash_keys(config) : { }

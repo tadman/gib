@@ -125,17 +125,7 @@ class Gititback::CommandLine
       puts "Configuration"
       puts '-' * 78
       
-      @config.to_h.collect do |key, value|
-        case (value)
-        when Array
-          value.each_with_index do |item, i|
-            puts "%-20s %s" % [ (i == 0 ? key : ''), item ]
-          end
-        else
-          puts "%-20s %s" % [ key, value ]
-        end
-      end
-      
+      @config.pretty_print
       puts
       puts "Config Files"
       puts '-' * 78
@@ -143,7 +133,6 @@ class Gititback::CommandLine
       puts "#{Gititback::Config.config_file_path} (Loaded)"
       Gititback::Config.config_files_found.each do |file|
         next if (file == Gititback::Config.config_file_path)
-
         puts file
       end
 
