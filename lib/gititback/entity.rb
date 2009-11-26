@@ -143,7 +143,7 @@ class Gititback::Entity
   end
 
   # Returns the status of the archive as a text label
-  def status
+  def status_label
     case
     when locked?
       'Updating'

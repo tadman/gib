@@ -82,7 +82,7 @@ class Gititback::CommandLine
       end
     when 'status'
       @client.entity_for_working_directory! do |entity|
-        status = entity.archive.status
+        status = entity.archive.status_label
         
         puts "#{Gititback::Support.shortform_path(entity.path)} => #{Gititback::Support.shortform_path(entity.archive_path)}"
         puts '-' * 78
