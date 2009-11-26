@@ -14,9 +14,33 @@ class Gititback::Entity
   ].freeze
   FILE_INJECT_SIZE = 128
   
-  def initialize(config, path)
-    @config = config
-    @path = path
+  def initialize(config, path, source)
+    @config             = config
+    if source[/^mysql:\/\/([^\/]+)/]
+      @entity_type        = :mysql
+      @database_name      = path
+      @path               = File.expand_path(File.join(@config.local_archive, 'archive', 'databases', $1, path))
+      @connection_config  = @config.connections[$1.to_sym]
+    else
+      @entity_type        = :folder
+      @path               = path
+    end
+  end
+  
+  def entity_type
+    @entity_type
+  end
+
+  def is_mysql_entity?
+    self.entity_type == :mysql
+  end
+  
+  def is_folder_entity?
+    self.entity_type == :folder
+  end
+
+  def connection_config
+    @connection_config
   end
   
   def path
@@ -65,8 +89,8 @@ class Gititback::Entity
       @archive.config('user.email', @config.user_email)
       
       @archive.commit("Initialize archive of #{path_id}", :allow_empty => true)
+      puts " (created new archive): #{archive_path}"
     end
-     
     @archive
   end
   
@@ -80,7 +104,6 @@ class Gititback::Entity
         files << path
       end
     end
-    
     files.sort
   end
   
@@ -216,13 +239,16 @@ class Gititback::Entity
     lock! do
       status(true)
       
+      if is_mysql_entity?
+        dump_database
+      end
       _archivable_files = archivable_files.sort
       _archived_files = archived_files.sort
     
       files_added = (_archivable_files - _archived_files)
       files_updated = (_archivable_files & _archived_files)
       files_removed = (_archived_files - _archivable_files - INTERNAL_FILES)
-    
+  
       files_added.each_slice(FILE_INJECT_SIZE) do |files|
         files.each do |path|
           yield(:add_file, path) if (block_given?)
@@ -242,7 +268,7 @@ class Gititback::Entity
         end
         archive.remove(files) unless (files.empty?)
       end
-      
+    
       should_amend = false
 
       if (modifications?)
@@ -254,7 +280,7 @@ class Gititback::Entity
         update_info_file!
 
         archive.add(INFO_FILE_NAME)
-        
+      
         status(true) # Reload
 
         if (file_modified?(INFO_FILE_NAME))
@@ -262,6 +288,12 @@ class Gititback::Entity
         end
       end
     end
+    self.push!
+    
+    if is_mysql_entity?
+      cleanup_database_dump
+    end
+    
   end
 
   def remote_url
@@ -329,12 +361,24 @@ class Gititback::Entity
   def to_json
     {
       :server_id => @config.server_id,
-      :path => path,
-      :path_id => path_id,
-      :unique_id => unique_id
+      :archive => {
+        :path => path
+        # :path_id => path_id,
+        # :unique_id => unique_id
+      }
     }.to_json
   end
   
+  def dump_database
+    db = Gititback::Database.new(@connection_config)
+    db.dump(@database_name, archive.dir.path)
+  end
+
+  def cleanup_database_dump
+    db = Gititback::Database.new(@connection_config)
+    db.cleanup_dump(@database_name, archive.dir.path)
+  end
+
 protected
   # Returns a simplified id:name descriptor for a given user id number (uid)
   # or a number where no user with that id is found.

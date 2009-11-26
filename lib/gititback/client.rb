@@ -3,36 +3,6 @@ class Gititback::Client
     @config = config
   end
 
-  def connection(name)
-    # Only load mysql dependency if this feature is used
-    require 'mysql'
-    
-    name = name.to_sym
-    
-    @connection ||= { }
-    
-    @connection[name] ||= begin
-      connection_config = @config.connections[name]
-      
-      unless (connection_config)
-        raise Gititback::Exception::RuntimeError, "No database connection named '#{name}' defined in configuration."
-      end
-
-      conn = Mysql.new(
-        connection_config[:socket] ? nil : (connection_config[:host] || 'localhost'),
-        connection_config[:username] || 'root',
-        connection_config[:password] || '',
-        '',
-        connection_config[:socket] ? nil : (connection_config[:port] || 3306),
-        connection_config[:socket]
-      )
-      
-      yield(conn) if (block_given?)
-      
-      conn
-    end
-  end
-
   # Returns the current server_id value which is typically the
   # FQDN hostname
   def server_id
@@ -46,17 +16,20 @@ class Gititback::Client
     @config.entities.inject({ }) do |h, source|
       h[source] =
         case (source)
-        when /^mysql:\/\/([^\/]+)/
+        when /^mysql:\/\/([^\/]+)\/(.*)/
           db_list = [ ]
-
-          connection($1) do |c|
-            c.query("SHOW DATABASES") do |res|
-              while (row = res.fetch_row)
-                db_list << row[0]
+          db = Gititback::Database.new(@config.connections[$1.to_sym])
+          db.connection($1) do |c|
+            if $2 == '*'
+              c.query("SHOW DATABASES") do |res|
+                while (row = res.fetch_row)
+                  db_list << row[0]
+                end
               end
+            else
+              db_list << $2
             end
           end
-
           db_list
         else
           Dir.glob(File.expand_path(source)).reject do |path|
@@ -69,6 +42,7 @@ class Gititback::Client
   
   # Returns true if the given path should be ignored, false otherwise
   def should_ignore_source?(path)
+    return false unless @config.ignore_entities
     base_path = File.basename(path)
     
     @config.ignore_entities.each do |pattern|
@@ -85,9 +59,10 @@ class Gititback::Client
     @local_entities_list ||=
       expand_entities_list.collect do |source, paths|
         paths.collect do |path|
-          Gititback::Entity.new(@config, path)
+          Gititback::Entity.new(@config, path, source)
         end
       end.flatten
+      
   end
   
   # Returns the entity for the given path, or nil if none is found

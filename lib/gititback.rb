@@ -9,6 +9,7 @@ module Gititback
   autoload(:Entity, 'gititback/entity')
   autoload(:Remote, 'gititback/remote')
   autoload(:Support, 'gititback/support')
+  autoload(:Database, 'gititback/database')
   
   module Exception
     class ConfigurationError < ::Exception

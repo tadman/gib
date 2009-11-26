@@ -184,20 +184,24 @@ class Gititback::CommandLine
       end
     when 'update'
       @client.entity_for_working_directory! do |entity|
-        puts Gititback::Support.shortform_path(entity.path) if (@config.verbose)
+        puts Gititback::Support.shortform_path(entity.path)
+        stats = Hash.new(0)
         entity.update! do |state, path|
           if (@config.verbose)
             case (state)
             when :add_file
+              stats[state] += 1
               puts "A #{path}"
             when :update_file
+              stats[state] += 1
               puts "M #{path}"
             when :remove_file
+              stats[state] += 1
               puts "R #{path}"
             end
           end
         end
-        entity.push!
+        puts "(#{stats[:add_file]} added, #{stats[:update_file]} updated, #{stats[:remove_file]} removed)"
       end
     when 'env'
       @client.entity_for_working_directory do |entity|
@@ -225,17 +229,17 @@ class Gititback::CommandLine
         when :add_file
           stats[state] += 1
           if (@config.verbose)
-            puts "+ #{entity}"
+            puts "A #{entity}"
           end
         when :update_file
           stats[state] += 1
           if (@config.verbose)
-            puts "* #{entity}"
+            puts "M #{entity}"
           end
         when :remove_file
           stats[state] += 1
           if (@config.verbose)
-            puts "- #{entity}"
+            puts "R #{entity}"
           end
         when :update_finish
           puts " (#{stats[:add_file]} added, #{stats[:update_file]} updated, #{stats[:remove_file]} removed)"
