@@ -1,10 +1,11 @@
 class Gititback::Database
   def initialize(options = {})
-    @username = options[:username] || 'root'
-    @password = options[:password] || ''
-    @socket   = options[:socket]
-    @host     = options[:host] || 'localhost'
-    @port     = options[:port] || 3306
+    @username  = options[:username] || 'root'
+    @password  = options[:password] || ''
+    @socket    = options[:socket]
+    @host      = options[:host] || 'localhost'
+    @port      = options[:port] || 3306
+    @mysqldump = options[:mysqldump] || 'mysqldump'
   end
 
   def connection(name)
@@ -33,7 +34,7 @@ class Gititback::Database
   # http://dev.mysql.com/doc/refman/5.1/en/mysqldump.htm
   def dump(database_name, dst)
     print "Dummping #{database_name} ..."
-    command = "mysqldump5"
+    command = @mysqldump
     command << " -u #{@username}"
     command << " --skip-comments"
     command << " --skip-extended-insert"
@@ -43,10 +44,10 @@ class Gititback::Database
     command << " #{database_name}"
     command << " > #{dst}"
     output = `#{command}`
-    unless $?.success?
-      puts "Error: #{output}"
+    if  $?.success?
+      puts 'Ok'
     else
-      puts 'Done'
+      puts 'ERROR: Check your configuration file'
     end
   end
   
