@@ -115,7 +115,7 @@ class Gititback::CommandLine
       puts '-' * 78
 
       @client.local_entities_list.each do |e|
-        puts "%-40s %-37s" % [ Gititback::Support.shortform_path(e.path), e.status ]
+        puts "%-40s %-37s" % [ Gititback::Support.shortform_path(e.path), e.status_label ]
       end
       
       if (@client.local_entities_list.empty?)
