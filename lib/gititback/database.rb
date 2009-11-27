@@ -40,9 +40,10 @@ class Gititback::Database
     command << " --skip-extended-insert"
     command << " --single-transaction"
     command << " --quick"
-    command << " -p #{@password}" unless @password.blank?
+    command << " --password=#{@password}" unless @password.blank?
     command << " #{database_name}"
     command << " > #{dst}"
+    puts command
     output = `#{command}`
     if  $?.success?
       puts 'Ok'
